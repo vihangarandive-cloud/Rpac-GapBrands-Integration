@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GapBrands | Job Automation</title>
+    <meta name="description"
+        content="r-pac GAP Brands Order Automation Portal — batch and download PDF orders efficiently.">
+    <link rel="icon" type="image/png" href="/static/images/rpac_logo.png?v=3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --teal: #14b8a6;
+            --teal-dark: #0d9488;
+            --teal-glow: rgba(20, 184, 166, 0.18);
+            --bg: #080d1a;
+            --card-bg: rgba(13, 20, 40, 0.82);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-focus: #14b8a6;
+            --input-bg: rgba(6, 11, 25, 0.7);
+            --text: #e2e8f0;
+            --text-muted: #64748b;
+            --text-label: #94a3b8;
+            --danger: #f87171;
+            --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #080d1a;
+            background-image:
+                radial-gradient(ellipse at 10% 20%, rgba(20, 184, 166, 0.10) 0%, transparent 45%),
+                radial-gradient(ellipse at 90% 80%, rgba(56, 189, 248, 0.08) 0%, transparent 45%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 16px;
+            color: var(--text);
+        }
+
+        /* ─── HEADER ─── */
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+
+        .logo-container img {
+            height: 55px; /* Adjust height appropriately for the r-pac logo */
+            width: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+        }
+
+        header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* ─── GLASS CARD ─── */
+        .card {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            margin-bottom: 32px;
+        }
+
+        /* ─── GRID ─── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.2fr;
+            gap: 28px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            min-width: 0;
+        }
+
+        /* ─── FIELD ─── */
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-label);
+        }
+
+        .field label .req {
+            color: var(--danger);
+            margin-left: 2px;
+        }
+
+        /* ─── UNIFIED INPUT / SELECT ─── */
+        .f-input,
+        .f-select,
+        .f-textarea {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 10px;
+            padding: 9px 12px;
+            color: var(--text);
+            font-size: 0.8rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        
+        .f-input {
+            min-height: 38px;
+        }
+
+        .f-input::placeholder,
+        .f-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .f-input:focus,
+        .f-select:focus,
+        .f-textarea:focus {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px var(--teal-glow);
+            background: rgba(10, 16, 35, 0.9);
+        }
+
+        /* ─── CUSTOM SELECT CSS ─── */
+        .custom-select-container {
+            position: relative;
+            width: 100%;
+        }
+        .custom-select-trigger {
+            width: 100%;
+            min-height: 38px;
+            background: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 10px;
+            padding: 9px 36px 9px 12px;
+            color: var(--text);
+            font-size: 0.8rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            cursor: pointer;
+            text-align: left;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            
+            background-image: var(--arrow);
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 12px 12px;
+            
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .custom-select-trigger:focus, .custom-select-container.open .custom-select-trigger {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px var(--teal-glow);
+            background-color: rgba(10, 16, 35, 0.9);
+        }
+        .custom-select-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: rgba(13, 20, 40, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 10px; /* Rounded box edges */
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+            max-height: 250px;
+            overflow-y: auto;
+            
+            display: none;
+            flex-direction: column;
+        }
+        /* Custom scrollbar for dropdown */
+        .custom-select-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-select-dropdown::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+        .custom-select-container.open .custom-select-dropdown {
+            display: flex;
+        }
+        .custom-select-option {
+            padding: 4px 12px; /* Even more compact line spacing */
+            font-size: 0.75rem; /* Compact font size */
+            color: var(--text);
+            cursor: pointer;
+            line-height: 1.25; /* Tighter line height */
+            transition: background 0.1s;
+            word-wrap: break-word; /* Wrap text to deduct row width */
+        }
+        .custom-select-option:hover {
+            background: rgba(20, 184, 166, 0.15);
+        }
+        .custom-select-option.selected {
+            background: var(--teal-glow);
+            color: var(--teal);
+            font-weight: 600;
+        }
+
+        /* Hide native select since we use custom UI */
+        .f-select { display: none !important; }
+
+        /* ─── TEXTAREA ─── */
+        .f-textarea {
+            resize: none;
+            min-height: 210px;
+            line-height: 1.6;
+        }
+
+        /* ─── SEASON ROW ─── */
+        .season-row {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .season-row .f-select {
+            flex: 1;
+        }
+
+        .season-btn {
+            background: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 10px;
+            width: 40px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .season-btn.add {
+            color: var(--teal);
+        }
+
+        .season-btn.add:hover {
+            background: rgba(20, 184, 166, 0.12);
+            border-color: rgba(20, 184, 166, 0.35);
+        }
+
+        .season-btn.remove {
+            color: var(--danger);
+        }
+
+        .season-btn.remove:hover {
+            background: rgba(248, 113, 113, 0.12);
+            border-color: rgba(248, 113, 113, 0.35);
+        }
+
+        /* ─── SUBMIT BUTTON ─── */
+        .btn-submit {
+            width: 100%;
+            margin-top: 12px;
+            background: linear-gradient(135deg, var(--teal-dark) 0%, var(--teal) 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 14px 20px;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            transition: all 0.22s ease;
+            box-shadow: 0 4px 20px rgba(20, 184, 166, 0.35);
+            letter-spacing: 0.01em;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(20, 184, 166, 0.45);
+        }
+
+        .btn-submit:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ─── DIVIDER ─── */
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            margin: 28px 0 0;
+        }
+
+        /* ─── PROGRESS ─── */
+        .progress-section {
+            display: none;
+            animation: fadeUp 0.35s ease;
+        }
+
+        .progress-section.visible {
+            display: block;
+        }
+
+
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .status-bar h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(20, 184, 166, 0.2);
+            border-top-color: var(--teal);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+
+        .spinner.visible {
+            display: block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .log-box {
+            background: rgba(4, 8, 18, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            height: 220px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.78rem;
+            line-height: 1.7;
+        }
+
+        .log-box::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .log-box::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .log-line {
+            display: flex;
+            gap: 8px;
+        }
+
+        .log-prefix {
+            color: var(--teal);
+            flex-shrink: 0;
+        }
+
+        .log-text {
+            color: #cbd5e1;
+        }
+
+        .log-error {
+            color: var(--danger);
+        }
+
+        /* ─── DOWNLOAD ─── */
+        .download-section {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .download-section.visible {
+            display: block;
+            animation: fadeUp 0.3s ease;
+        }
+
+        .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+            border-radius: 12px;
+            padding: 13px 28px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.22s;
+            box-shadow: 0 4px 20px rgba(20, 184, 166, 0.35);
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(20, 184, 166, 0.45);
+        }
+
+        /* ─── FOOTER ─── */
+        footer {
+            margin-top: 10px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-align: center;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo-container">
+            <img id="headerLogo" src="/static/images/rpac_logo.png?v=4" alt="r-pac Logo"
+                 onerror="this.onerror=null;this.src='/wwwroot/static/images/rpac_logo.png';">
+        </div>
+        <div>
+            <h1>GAP Order Automation</h1>
+        </div>
+    </header>
+
+    <div class="card">
+        <form id="jobForm" onsubmit="event.preventDefault(); processJobs();">
+            <div class="form-grid">
+
+                <!-- COL 1 -->
+                <div class="col">
+                    <div class="field">
+                        <label>Brand</label>
+                        <select id="brand" name="brand" class="f-select" onchange="handleBrandChange(this.value)">
+                            <option value="Old Navy" selected>Old Navy</option>
+                            <option value="GAP">GAP</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Product Type</label>
+                        <select id="productType" name="productType" class="f-select">
+                            <option value="">— Select a Gender first —</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Franchise</label>
+                        <select id="franchise" name="franchise" class="f-select">
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Price Tickets / Stickers</label>
+                        <select id="priceTickets" name="priceTickets" class="f-select">
+                            <option value="None">None</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- COL 2 -->
+                <div class="col">
+                    <div class="field">
+                        <label>Product Gender</label>
+                        <select id="productGender" name="productGender" class="f-select"
+                            onchange="handleGenderChange(this.value)">
+                            <option value="">— Select —</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Vendor PO <span class="req">*</span></label>
+                        <input type="text" id="vendorPo" name="vendorPo" value="" required class="f-input"
+                            placeholder="Enter Vendor PO">
+                    </div>
+                    <div class="field">
+                        <label>Order LPN <span class="req">*</span></label>
+                        <select id="orderLpn" name="orderLpn" class="f-select">
+                            <option value="NO" selected>NO</option>
+                            <option value="YES">YES</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Season</label>
+                        <div class="season-row">
+                            <select id="season" name="season" class="f-select">
+                                <option value="SP26">SP26</option>
+                                <option value="SU26">SU26</option>
+                                <option value="FA26">FA26</option>
+                                <option value="HO26">HO26</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COL 3 -->
+                <div class="col">
+                    <div class="field" style="flex:1; display:flex; flex-direction:column;">
+                        <label style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>CD Numbers</span>
+                            <span
+                                style="font-size:0.65rem; color:var(--text-muted); text-transform:none; letter-spacing:0;">Paste
+                                one per line</span>
+                        </label>
+                        <textarea id="poNumbers" name="poNumbers" required class="f-textarea" style="flex:1;"
+                            placeholder="e.g.&#10;P2482428&#10;P2482530&#10;P2482601"></textarea>
+                    </div>
+                    <button type="submit" id="submitBtn" class="btn-submit">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Process &amp; Create Jobs
+                    </button>
+                </div>
+
+            </div><!-- /form-grid -->
+
+            <hr class="divider">
+
+            <!-- Progress Section -->
+            <div id="progressSection" class="progress-section">
+                <div class="status-bar">
+                    <div id="spinner" class="spinner"></div>
+                    <h3 id="statusTitle">Job Progress</h3>
+                </div>
+                <div id="logContainer" class="log-box"></div>
+                <div id="downloadSection" class="download-section">
+                    <a id="downloadBtn" href="#" class="btn-download">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Order Files
+                    </a>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <footer>Copyright &copy; 2026 | r-pac Lanka (Pvt) Ltd</footer>
+
+    <script>
+        // ─────────────────────────────────────────────
+        //  BRAND DATA (Genders and Tickets Reverted as requested)
+        // ─────────────────────────────────────────────
+        const brandData = {
+            "Old Navy": {
+                genders: ["BOYS", "DOG", "FOOTWEAR", "GIRLS", "MATERNITY", "MEN", "NEWBORN", "TODDLER", "UNIVERSAL", "WOMEN"],
+                tickets: [
+                    { text: 'None', value: 'None' },
+                    { text: '100573', value: '3a1b4887-fe03-7e7f-6654-1979283a1174' },
+                    { text: '1017592', value: '3a19f937-f003-fa59-1a24-2783f0bb8161' },
+                    { text: '1017593', value: '3a16e65a-49f8-4470-29d1-3392c674367a' },
+                    { text: '101885', value: '3a1b4884-ae99-bdf6-3f3e-be57c5a6e637' },
+                    { text: '1035872', value: '3a16e653-ac5f-34ba-7e81-bd6b78078898' },
+                    { text: '1047431', value: '3a137ad6-da27-edca-fba8-74b4cef0ac90' },
+                    { text: '1047433', value: '3a138aca-0e40-d3c4-622f-f241e4eb972a' },
+                    { text: '1047792', value: '3a17097c-9a55-5457-cf4d-0547513826cc' },
+                    { text: '1048004', value: '3a170983-9d06-30a5-109b-cb21b0555c4d' },
+                    { text: '1048772', value: '3a145910-fe9d-8566-c025-c4f99c66caf8' },
+                    { text: '1048773', value: '3a145914-83c0-8110-3846-07e91c983379' },
+                    { text: '1048996', value: '3a175ccc-43fe-e699-0b12-231aed4e45cd' },
+                    { text: '1048997', value: '3a175cc9-bd6b-73bb-a7ed-f1b2848f7096' },
+                    { text: '1062280', value: '3a1df56a-dfed-0af1-7d06-d1482c61520e' },
+                    { text: '1065611', value: '3a1f39a2-3f6f-04a7-cfbd-caad8ae4a347' },
+                    { text: '1065612', value: '3a1f39ab-5be7-2296-1108-d70b541868fc' },
+                    { text: '112044', value: '3a1b4886-6224-df2f-9ca1-961f322d3a2e' },
+                    { text: '167356', value: '3a19f9a6-b25a-cd9b-8ce4-de9ed28d1704' },
+                    { text: '269032', value: '3a19eb6f-ed6a-c527-5caa-8aac1c47d29e' },
+                    { text: '269034', value: '3a19f927-288b-1ce6-0c7b-bbcbe87740d5' }
+                ]
+            },
+            "GAP": {
+                genders: ["Baby", "Boys", "DOG", "Girls", "Go Baby", "Mens_Teen Boys", "Toddler", "Womens_Maternity_Teen Girl"],
+                tickets: [
+                    { text: 'None', value: 'None' },
+                    { text: '158105', value: '3a2142a3-83c7-4048-53b7-3386a230c16a' },
+                    { text: 'BGT-1', value: '3a19b806-46db-65b3-b8ea-61c127fff720' },
+                    { text: 'BGT-19', value: '3a19b7c4-d9e4-c944-cb1b-38c1808a2ee5' },
+                    { text: 'BPT1', value: '3a1973ad-e89f-a56b-3bb1-d7e1f74f8265' },
+                    { text: 'BPT2', value: '3a1a99be-a202-4b84-5937-bc0bd23f2c47' },
+                    { text: 'GB-812', value: '3a1c1c15-245d-4131-4188-c0b00c1e34b4' },
+                    { text: 'GBBP', value: '3a1e7ac4-f58b-84e7-5a66-ca7bd806cfd0' },
+                    { text: 'GBLUE_1', value: '3a1da454-ee17-6bd6-f333-2389095ea8b3' },
+                    { text: 'GBSL', value: '3a1e7224-bf01-0e98-7967-79ca444a1290' },
+                    { text: 'GFOL-11', value: '3a1a371a-1efe-df4f-762b-ef97c12cc61f' },
+                    { text: 'GFOL-8', value: '3a19b80a-a8b4-cb93-4e54-b3e9a9e56840' },
+                    { text: 'GFOLB-11', value: '3a1ab2ce-e64d-d044-9bed-d028fcb0e082' },
+                    { text: 'GFOLB-14', value: '3a19b80c-9e5d-9de0-c70a-8b150b67798f' },
+                    { text: 'GFOLK-10', value: '3a19b80f-d9da-e184-49cf-66f8172d733b' },
+                    { text: 'GFOLK-11', value: '3a1a99bb-bceb-bcab-0a69-fa7e7a388112' },
+                    { text: 'GKT-1', value: '3a19b807-847a-d74f-eef8-975562ea9a26' },
+                    { text: 'GKT-3', value: '3a19b7c6-ff8a-8f2d-5df2-2b24c714a45a' },
+                    { text: 'GOB1', value: '3a1973b6-fcbb-7c75-cbc6-9c5af3f37106' },
+                    { text: 'GOB2', value: '3a1973c0-a354-31fd-8896-9b5a76d53c59' },
+                    { text: 'GOB3', value: '3a2097c7-eea1-4f9e-8f43-cfbfbfd6dc17' },
+                    { text: 'GOB4', value: '3a2097cc-95b2-6ed5-1b98-3aafea4b9941' },
+                    { text: 'GOBPT-11', value: '3a1ab2d1-cbab-745b-fd5c-aea99606dddd' },
+                    { text: 'GOBPT-14', value: '3a19b80b-abd1-d2ea-1f88-ecf997af861b' },
+                    { text: 'GOKPT-10', value: '3a19b80e-e23c-16ba-eab5-bda8f9b6aef6' },
+                    { text: 'GOKPT-11', value: '3a1a6640-652b-9915-0028-4b43cda47c03' },
+                    { text: 'GOPT-8', value: '3a19b809-3e15-8a54-8557-8a799211cf87' },
+                    { text: 'GOYPT-11', value: '3a1a99b7-8114-b88d-44ac-fefab6a6c8d6' },
+                    { text: 'GPT-1', value: '3a16b238-14ec-1c28-0e8a-056502f358c1' },
+                    { text: 'GPT-26', value: '3a1a3717-011e-ffe7-9f87-d371d0fe8122' },
+                    { text: 'GSKU-10-U', value: '3a1882a3-1a71-92e6-5b0b-8cdb9f4aa3e9' }
+                ]
+            }
+        };
+
+        // ─────────────────────────────────────────────
+        //  DYNAMIC DATA FETCHING
+        // ─────────────────────────────────────────────
+        function setSelectOptions(id, options, selectedValue) {
+            const el = document.getElementById(id);
+            el.innerHTML = '';
+            options.forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o.value;
+                opt.textContent = o.text;
+                if (o.value === selectedValue) opt.selected = true;
+                el.appendChild(opt);
+            });
+            
+            // Sync with custom dropdown UI if initialized
+            if (typeof updateCustomSelect === 'function') {
+                updateCustomSelect(el);
+            }
+        }
+
+        async function fetchDynamicData() {
+            try {
+                // Show loading states
+                setSelectOptions('season', [{ value: '', text: 'Loading...' }], '');
+                setSelectOptions('franchise', [{ value: '', text: 'Loading...' }], '');
+                // Fetch Seasons
+                const seasonRes = await fetch('/api/gap-brands/seasons');
+                const seasonData = await seasonRes.json();
+                if (seasonData && seasonData.items && seasonData.items.length > 0) {
+                    const seasonOpts = seasonData.items.map(s => ({ value: s.seasonCode || s.seasonName, text: s.seasonCode || s.seasonName }));
+                    setSelectOptions('season', seasonOpts, seasonOpts[0]?.value);
+                }
+
+                // Fetch Franchises
+                const franRes = await fetch('/api/gap-brands/franchises');
+                const franData = await franRes.json();
+                if (Array.isArray(franData) && franData.length > 0) {
+                    const franOpts = [{value: "None", text: "None"}, ...franData.map(f => ({ value: f.marketName || f.marketCode, text: f.marketName || f.marketCode }))];
+                    setSelectOptions('franchise', franOpts, 'None');
+                } else {
+                    setSelectOptions('franchise', [{value: "None", text: "None"}], 'None');
+                }
+
+                // Initialize dropdowns
+                handleBrandChange(document.getElementById('brand').value);
+            } catch (err) {
+                console.error("Error fetching dynamic data:", err);
+            }
+        }
+
+        async function handleBrandChange(brand) {
+            // Repopulate Gender from hardcoded config
+            const genders = (brandData[brand] || {}).genders || [];
+            const genderOpts = [{ value: '', text: '— Select —' }, ...genders.map(g => ({ value: g, text: g }))];
+            setSelectOptions('productGender', genderOpts, '');
+
+            // Reset Product Type
+            setSelectOptions('productType', [{ value: '', text: '— Select a Gender first —' }], '');
+
+            // Show Loading State for Tickets
+            setSelectOptions('priceTickets', [{ value: '', text: 'Loading tickets...' }], '');
+
+            // Fetch and Repopulate Tickets for the specific brand
+            try {
+                const ticketRes = await fetch(`/api/gap-brands/tickets?brand=${encodeURIComponent(brand)}`);
+                const ticketData = await ticketRes.json();
+                if (Array.isArray(ticketData) && ticketData.length > 0) {
+                    const ticketOpts = ticketData.map(t => ({ value: t.value || t.id, text: t.text || t.name }));
+                    setSelectOptions('priceTickets', ticketOpts, 'None');
+                } else {
+                    setSelectOptions('priceTickets', [{value: "None", text: "None"}], 'None');
+                }
+            } catch (err) {
+                console.error("Error fetching tickets:", err);
+                setSelectOptions('priceTickets', [{value: "None", text: "None"}], 'None');
+            }
+        }
+
+        async function handleGenderChange(gender) {
+            if (!gender) {
+                setSelectOptions('productType', [{ value: '', text: '— Select a Gender first —' }], '');
+                return;
+            }
+            
+            // Show Loading State
+            setSelectOptions('productType', [{ value: '', text: 'Loading types...' }], '');
+            
+            try {
+                const brand = document.getElementById('brand').value;
+                const typeRes = await fetch(`/api/gap-brands/types?gender=${encodeURIComponent(gender)}&brand=${encodeURIComponent(brand)}&_t=${new Date().getTime()}`);
+                const typeData = await typeRes.json();
+                
+                // The size-chart/product-type-by-product-gender API returns an array of strings directly
+                if (Array.isArray(typeData) && typeData.length > 0) {
+                    const sortedTypes = typeData.sort();
+                    const typeOpts = [{ value: '', text: '' }, ...sortedTypes.map(t => ({ value: t, text: t }))];
+                    setSelectOptions('productType', typeOpts, '');
+                } else {
+                    setSelectOptions('productType', [{ value: '', text: '— No types available —' }], '');
+                }
+            } catch (err) {
+                console.error("Error fetching types:", err);
+                setSelectOptions('productType', [{ value: '', text: '— Error loading types —' }], '');
+            }
+        }
+
+        function addSeason() {
+            const season = prompt('Enter custom season code (e.g. SP27):');
+            if (season && season.trim()) {
+                const el = document.getElementById('season');
+                const opt = document.createElement('option');
+                opt.value = season.trim(); opt.textContent = season.trim(); opt.selected = true;
+                el.appendChild(opt);
+                if (typeof updateCustomSelect === 'function') updateCustomSelect(el);
+            }
+        }
+        function removeSeason() {
+            const el = document.getElementById('season');
+            if (el.selectedIndex >= 0) el.remove(el.selectedIndex);
+            if (typeof updateCustomSelect === 'function') {
+                if(el.options.length > 0) el.selectedIndex = 0;
+                updateCustomSelect(el);
+            }
+        }
+
+        // ─── CUSTOM DROPDOWN LOGIC ───
+        function createCustomSelect(selectEl) {
+            if (selectEl.nextElementSibling && selectEl.nextElementSibling.classList.contains('custom-select-container')) {
+                updateCustomSelect(selectEl);
+                return;
+            }
+
+            const container = document.createElement('div');
+            container.className = 'custom-select-container';
+
+            const trigger = document.createElement('button');
+            trigger.type = 'button';
+            trigger.className = 'custom-select-trigger';
+
+            const dropdown = document.createElement('div');
+            dropdown.className = 'custom-select-dropdown';
+
+            container.appendChild(trigger);
+            container.appendChild(dropdown);
+            selectEl.parentNode.insertBefore(container, selectEl.nextSibling);
+
+            trigger.addEventListener('click', (e) => {
+                e.preventDefault();
+                const isOpen = container.classList.contains('open');
+                document.querySelectorAll('.custom-select-container').forEach(c => c.classList.remove('open'));
+                if (!isOpen) container.classList.add('open');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!container.contains(e.target)) {
+                    container.classList.remove('open');
+                }
+            });
+
+            updateCustomSelect(selectEl);
+        }
+
+        function updateCustomSelect(selectEl) {
+            const container = selectEl.nextElementSibling;
+            if (!container || !container.classList.contains('custom-select-container')) return;
+
+            const trigger = container.querySelector('.custom-select-trigger');
+            const dropdown = container.querySelector('.custom-select-dropdown');
+            
+            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+            trigger.textContent = selectedOpt ? selectedOpt.text : '— Select —';
+
+            dropdown.innerHTML = '';
+            Array.from(selectEl.options).forEach((opt, index) => {
+                const optionEl = document.createElement('div');
+                optionEl.className = 'custom-select-option';
+                if (opt.selected) optionEl.classList.add('selected');
+                optionEl.textContent = opt.text;
+
+                optionEl.addEventListener('click', () => {
+                    selectEl.selectedIndex = index;
+                    trigger.textContent = opt.text;
+                    container.classList.remove('open');
+                    Array.from(dropdown.children).forEach(c => c.classList.remove('selected'));
+                    optionEl.classList.add('selected');
+                    
+                    const event = new Event('change', { bubbles: true });
+                    selectEl.dispatchEvent(event);
+                });
+                dropdown.appendChild(optionEl);
+            });
+        }
+
+        // ─── INIT ───
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.f-select').forEach(createCustomSelect);
+            fetchDynamicData();
+        });
+
+        // ─────────────────────────────────────────────
+        //  LOG
+        // ─────────────────────────────────────────────
+        function appendLog(msg, isError = false) {
+            const container = document.getElementById('logContainer');
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            line.innerHTML = `<span class="log-prefix">›</span><span class="${isError ? 'log-error' : 'log-text'}">${msg}</span>`;
+            container.appendChild(line);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ─────────────────────────────────────────────
+        //  PROCESS JOBS
+        // ─────────────────────────────────────────────
+        async function processJobs() {
+            const poNumbers = document.getElementById('poNumbers').value.trim();
+            if (!poNumbers) return;
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+
+            const progressSection = document.getElementById('progressSection');
+            progressSection.classList.add('visible');
+            document.getElementById('logContainer').innerHTML = '';
+            document.getElementById('downloadSection').classList.remove('visible');
+            document.getElementById('spinner').classList.add('visible');
+            document.getElementById('statusTitle').textContent = 'Processing Jobs...';
+
+            const reqData = {
+                po_numbers: poNumbers,
+                brand: document.getElementById('brand').value,
+                product_gender: document.getElementById('productGender').value,
+                product_type: document.getElementById('productType').value,
+                vendor_po: document.getElementById('vendorPo').value,
+                order_lpn_labels: document.getElementById('orderLpn').value,
+                season: document.getElementById('season').value,
+                franchise: document.getElementById('franchise').value,
+                price_tickets: document.getElementById('priceTickets').value,
+                price_ticket_code: document.getElementById('priceTickets').options[document.getElementById('priceTickets').selectedIndex].text
+            };
+
+            try {
+                const res = await fetch('/api/start-job', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reqData)
+                });
+                if (!res.ok) throw new Error('Failed to start job');
+                const data = await res.json();
+                const jobId = data.job_id;
+
+                const evtSource = new EventSource(`/api/job-progress/${jobId}`);
+                evtSource.onmessage = function (e) {
+                    const msg = e.data;
+                    if (msg === 'DONE') {
+                        evtSource.close();
+                        document.getElementById('statusTitle').textContent = 'Job Completed ✓';
+                        document.getElementById('spinner').classList.remove('visible');
+                        btn.disabled = false;
+                        document.getElementById('downloadBtn').href = `/api/download/${jobId}`;
+                        document.getElementById('downloadSection').classList.add('visible');
+                        appendLog('SUCCESS: Job completed. Click download to save files.');
+                    } else if (msg.startsWith('ERROR')) {
+                        appendLog(msg, true);
+                        evtSource.close();
+                        document.getElementById('statusTitle').textContent = 'Job Failed';
+                        document.getElementById('spinner').classList.remove('visible');
+                        btn.disabled = false;
+                    } else {
+                        appendLog(msg);
+                    }
+                };
+                evtSource.onerror = err => console.error('SSE:', err);
+            } catch (err) {
+                appendLog('Error: ' + err.message, true);
+                btn.disabled = false;
+                document.getElementById('spinner').classList.remove('visible');
+            }
+        }
+    </script>
+</body>
+
+</html>
