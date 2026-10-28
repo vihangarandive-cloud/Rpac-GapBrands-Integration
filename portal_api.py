@@ -51,7 +51,45 @@ def to_form_urlencoded(cart_items, token):
     data["__RequestVerificationToken"] = token
     return urllib.parse.urlencode(data)
 
-def fetch_single_po(session, po_num: str, req_brand: str, product_gender: str, product_type: str, franchise: str, vendor_po: str, season: str, price_tickets: str, price_ticket_code: str, order_lpn_labels: str, token: str):
+def calculate_lpn_quantity(base_qty: int, order_type: str, brand: str = "") -> int:
+    """
+    Calculate final total ordered LPN quantity according to slab rules.
+    - For Old Navy (US/CA 3-up print layout): the quantity must always be an odd number.
+    - For other brands (e.g. GAP): the quantity must always be an even number.
+    """
+    if base_qty <= 0:
+        return 0
+
+    additional_lpn = 0
+    if order_type == "MAS":
+        if 1 <= base_qty <= 100:
+            additional_lpn = 12
+        elif 100 < base_qty <= 500:
+            additional_lpn = 18
+        elif 500 < base_qty <= 1000:
+            additional_lpn = 20
+        elif 1000 < base_qty <= 5000:
+            additional_lpn = 24
+        elif base_qty > 5000:
+            additional_lpn = 30
+    else:
+        additional_lpn = 10
+
+    total_qty = base_qty + additional_lpn
+
+    is_old_navy = bool(brand and "old" in brand.lower() and "navy" in brand.lower())
+    if is_old_navy:
+        # ONPT Reference Stickers - US/CA (3-Up): must be an odd number
+        if total_qty % 2 == 0:
+            total_qty += 1
+    else:
+        # Other brands: must be an even number
+        if total_qty % 2 != 0:
+            total_qty += 1
+
+    return total_qty
+
+def fetch_single_po(session, po_num: str, req_brand: str, product_gender: str, product_type: str, franchise: str, vendor_po: str, season: str, price_tickets: str, price_ticket_code: str, order_lpn_labels: str, order_type: str, token: str):
     import time
     po_num = po_num.strip()
     if not po_num:
@@ -83,17 +121,22 @@ def fetch_single_po(session, po_num: str, req_brand: str, product_gender: str, p
         details = []
         qty_dict = {}
         for i, d_item in enumerate(detail_items):
+            base_qty = int(d_item["quantity"])
             det = {
                 "Id": d_item["id"],
-                "quantity": str(d_item["quantity"]),
+                "quantity": str(base_qty),
                 "poNo": po_num
             }
             if order_lpn_labels == "YES":
-                det["lpnQuantity"] = str(d_item["quantity"])
-                qty_dict[f"lpnQty_{d_item['id']}"] = str(d_item["quantity"])
+                lpn_qty = str(calculate_lpn_quantity(base_qty, order_type, req_brand))
+                det["lpnQuantity"] = lpn_qty
+                det["quantity"] = lpn_qty
+                qty_dict[f"lpnQty_{d_item['id']}"] = lpn_qty
+                qty_dict[f"qty_{d_item['id']}"] = lpn_qty
                 
             details.append(det)
-            qty_dict[f"qty_{d_item['id']}"] = str(d_item["quantity"])
+            if order_lpn_labels != "YES":
+                qty_dict[f"qty_{d_item['id']}"] = str(base_qty)
             
 
             
@@ -322,6 +365,7 @@ class PortalAPI:
             price_tickets = getattr(req, 'price_tickets', "None")
             price_ticket_code = getattr(req, 'price_ticket_code', "None")
             order_lpn_labels = getattr(req, 'order_lpn_labels', "NO")
+            order_type = getattr(req, 'order_type', "MAS")
 
             clean_po_list = []
             for p in po_list:
@@ -356,6 +400,7 @@ class PortalAPI:
                         price_tickets,
                         price_ticket_code,
                         order_lpn_labels,
+                        order_type,
                         token
                     ): po for po in clean_po_list
                 }
@@ -402,6 +447,29 @@ class PortalAPI:
                     if ci_brand and ci_brand.lower() not in ("oldnavy", "old navy"):
                         if not gap_dto.get("cooId"):
                             gap_dto["cooId"] = COO_MADE_IN_SRI_LANKA
+
+            # Enforce LPN slab quantities on the cart items before checkout
+            if order_lpn_labels == "YES":
+                for ci in cart_items:
+                    # Also patch the top level quantity in the cart item!
+                    for dto_key in ["cartGapPoItemDto", "cartOldNavyPoItemDto"]:
+                        dto = ci.get(dto_key)
+                        if dto is not None:
+                            try:
+                                base_qty = int(float(dto.get("originalQuantity", dto.get("quantity", 0))))
+                                if base_qty == 0:
+                                    base_qty = int(float(ci.get("quantity", 0)))
+                                
+                                item_brand = dto.get("brand") or brand
+                                if base_qty > 0:
+                                    new_qty = str(calculate_lpn_quantity(base_qty, order_type, item_brand))
+                                    dto["lpnQuantity"] = new_qty
+                                    dto["quantity"] = new_qty
+                                    # Very important: Update the top-level cart item properties!
+                                    ci["quantity"] = new_qty
+                                    ci["lpnQuantity"] = new_qty
+                            except (ValueError, TypeError):
+                                pass
 
             # Confirm 1st
             form_data = to_form_urlencoded(cart_items, token)

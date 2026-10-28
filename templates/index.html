@@ -101,6 +101,49 @@
             margin-bottom: 32px;
         }
 
+        /* ─── TABS ─── */
+        .tabs-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 28px;
+        }
+
+        .tabs-container {
+            display: inline-flex;
+            background: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 10px;
+            overflow: hidden;
+            height: 38px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 0 50px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #080d1a;
+            font-weight: 700;
+        }
+
         /* ─── GRID ─── */
         .form-grid {
             display: grid;
@@ -503,7 +546,14 @@
     </header>
 
     <div class="card">
+        <div class="tabs-wrapper">
+            <div class="tabs-container">
+                <button type="button" class="tab-btn active" id="tabMas" onclick="setOrderType('MAS')">MAS</button>
+                <button type="button" class="tab-btn" id="tabNonMas" onclick="setOrderType('Non-MAS')">NON - MAS</button>
+            </div>
+        </div>
         <form id="jobForm" onsubmit="event.preventDefault(); processJobs();">
+            <input type="hidden" id="orderType" name="orderType" value="MAS">
             <div class="form-grid">
 
                 <!-- COL 1 -->
@@ -900,6 +950,21 @@
         }
 
         // ─────────────────────────────────────────────
+        //  TABS
+        // ─────────────────────────────────────────────
+        function setOrderType(type) {
+            document.getElementById('orderType').value = type;
+            document.getElementById('tabMas').classList.remove('active');
+            document.getElementById('tabNonMas').classList.remove('active');
+            
+            if (type === 'MAS') {
+                document.getElementById('tabMas').classList.add('active');
+            } else {
+                document.getElementById('tabNonMas').classList.add('active');
+            }
+        }
+
+        // ─────────────────────────────────────────────
         //  PROCESS JOBS
         // ─────────────────────────────────────────────
         async function processJobs() {
@@ -926,7 +991,8 @@
                 season: document.getElementById('season').value,
                 franchise: document.getElementById('franchise').value,
                 price_tickets: document.getElementById('priceTickets').value,
-                price_ticket_code: document.getElementById('priceTickets').options[document.getElementById('priceTickets').selectedIndex].text
+                price_ticket_code: document.getElementById('priceTickets').options[document.getElementById('priceTickets').selectedIndex].text,
+                order_type: document.getElementById('orderType').value
             };
 
             try {
